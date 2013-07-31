@@ -19,7 +19,6 @@ scalacOptions += "-unchecked"
 crossPaths := false
 
 
-
 // - Execution ---------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
 mainClass := Some("com.nrinaudo.eshitsuji.Launcher")
@@ -42,9 +41,9 @@ org.scalastyle.sbt.PluginKeys.config <<= baseDirectory {_ / "project" / "scalast
 // ---------------------------------------------------------------------------------------------------------------------
 libraryDependencies += "nekohtml"         %  "nekohtml"     % "1.9.6.2"
 
-libraryDependencies += "org.scribe"       %  "scribe"       % "1.3.3"
+libraryDependencies += "org.mongodb"      %% "casbah"       % "2.6.2"
 
-libraryDependencies += "org.xerial"       %  "sqlite-jdbc"  % "3.7.2"
+libraryDependencies += "org.scribe"       %  "scribe"       % "1.3.3"
 
 libraryDependencies += "com.github.scopt" %% "scopt"        % "2.1.0"
 

@@ -8,27 +8,23 @@ import org.scalatest.{FunSpec, BeforeAndAfter}
   * @author Nicolas Rinaudo
   */
 class NameStoreSpec extends FunSpec with ShouldMatchers with BeforeAndAfter {
-  var store: NameStore = _
+  val store: NameStore = new NameStore(StorageSpec.testInstance(), "NameStoreSpec")
 
   before {
-    store = new NameStore(Storage.memory(), "test")
-  }
-
-  after {
-    store.close
+    store foreach {store -= _}
   }
 
   describe("a NameStore") {
-    it("has a size equal to the number of elements it contains") {
+    it("has a size equal to the number of names it contains") {
       store should have size(0)
 
       for(i <- 0 to 10) {
-        store += "name" + i
+        store.add("name" + i) should be(true)
         store should have size (i + 1)
       }
 
       for(i <- 10 to 0 by -1) {
-        store -= "name" + i
+        store.remove("name" + i) should be(true)
         store should have size (i)
       }
     }
@@ -37,42 +33,46 @@ class NameStoreSpec extends FunSpec with ShouldMatchers with BeforeAndAfter {
       for(i <- 0 to 10) {
         val name = "name" + i
 
-        store += name
+        store.add(name) should be(true)
         store should contain (name)
       }
     }
 
     it("forgets names when they are removed") {
       for(i <- 0 to 10) {
-        store += "name" + i
+        store.add("name" + i) should be(true)
       }
 
       for(i <- 10 to 0 by -1) {
         val name = "name" + i
 
         store should contain (name)
-        store -= name
+        store.remove(name) should be(true)
         store should not contain (name)
       }
     }
 
     it("silently ignores duplicate name addition") {
-      store += "nicolas"
-      store += "nicolas"
+      store.add("nicolas") should be(true)
+      store.add("nicolas") should be(false)
 
       store should have size (1)
     }
 
     it("silently ignores removal of unknown names") {
-      store -= "nicolas"
+      store.remove("nicolas") should be(false)
     }
 
-    it("refuse calls after it has been closed") {
-      store.close()
+    it("associates new values with a given name") {
+      store.add("nicolas") should be(true)
+      store.associate("nicolas", "rinaudo") should be(true)
+      store.associate("nicolas", "yamamoto") should be(true)
+    }
 
-      intercept[NullPointerException] {store += "nicolas"}
-      intercept[NullPointerException] {store -= "nicolas"}
-      intercept[NullPointerException] {store.size}
+    it("doesn't associate known values with a given name") {
+      store.add("nicolas") should be(true)
+      store.associate("nicolas", "rinaudo") should be(true)
+      store.associate("nicolas", "rinaudo") should be(false)
     }
   }
 }

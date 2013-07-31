@@ -1,68 +1,82 @@
 package com.nrinaudo.eshitsuji.storage
 
-/** Used to store lists of names in an SQLite database.
+import com.mongodb.casbah.Imports._
+
+/** Used to store names and associated values.
   *
-  * @param  storage where to store names.
-  * @param  table   name of the table in which to store names.
-  * @author Nicolas Rinaudo
+  * @param  storage where to store names and their associated values.
+  * @param  name    name of the collection in which names and their associated values will be stored.
+  * @author         Nicolas Rinaudo
   */
-class NameStore(private val storage: Storage, private val table: String) extends Iterable[String] {
-  // Makes sure the name store exists.
-  storage.update("create table if not exists %s (id integer primary key, name text unique not null)".format(table))
+class NameStore(storage: Storage, name: String) extends Iterable[String] {
+  /** MongoDB collection in which all names and associations are stored. */
+  private val col = storage.collection(name)
 
 
 
   // - Name list maintenance -------------------------------------------------------------------------------------------
   // -------------------------------------------------------------------------------------------------------------------
-  /** Method called whenever the name list has been modified. */
-  protected def updated() {}
+  /** Adds the specified name to the store.
+    *
+    * @param  name name to add to the store (will be stored lower-cased)
+    * @return      `true` if `name` was added to the store, `false` if it was already present.
+    */
+  def add(name: String): Boolean = {
+    try {
+      col.insert(MongoDBObject("_id" -> name.toLowerCase, "val" -> MongoDBList()))
+      true
+    }
+    catch {
+      case e: com.mongodb.MongoException.DuplicateKey => false
+    }
+  }
 
-  /** Adds the specified name to the list, if not already present.
+  /** Removes the specified name from the store.
     *
-    * Names are stored in their lower-cased version.
+    * @param  name name to remove from the store.
+    * @return      `true` if the name was removed from the store, `false` if it wasn't found.
+    */
+  def remove(name: String): Boolean = col.remove("_id" $eq name.toLowerCase).getN > 0
+
+  /** Adds the specified name to the store.
     *
-    * @param name name to store.
+    * @param  name name to add to the store.
+    * @return      the store itself.
     */
   def +=(name: String): NameStore = {
-    storage.prepare("insert or replace into %s (name) values (?)".format(table)).set(1, name.toLowerCase).update()
-    updated()
+    add(name)
     this
   }
 
-  /** Removes the specified name from the list.
+  /** Removes the specified name from the store.
     *
-    * This operation is case-insensitive.
-    *
-    * @param name name to remove from the list.
+    * @param  name name to remove the store.
+    * @return      the store itself.
     */
   def -=(name: String): NameStore = {
-    storage.prepare("delete from %s where name=?".format(table)).set(1, name.toLowerCase).update()
-    updated()
+    remove(name)
     this
   }
 
 
 
-  // - Maintenance -----------------------------------------------------------------------------------------------------
+  // - Name associations -----------------------------------------------------------------------------------------------
   // -------------------------------------------------------------------------------------------------------------------
-  /** Closes the underlying instance of [[com.nrinaudo.eshitsuji.storage.Storage]]. */
-  def close() = storage.close
+  /** Associates the specified value with the specified name.
+    *
+    * @param  name  name with which to associate `value`.
+    * @param  value value to associate with `name`.
+    * @return       `true` if the association is new, `false` otherwise.
+    */
+  def associate(name: String, value: String): Boolean = {
+    val v = value.toLowerCase
+
+    col.update(("_id" $eq name.toLowerCase) ++ ("val" $nin MongoDBList(v)), $push("val" -> v)).getN > 0
+  }
 
 
 
   // - Iterable implementation -----------------------------------------------------------------------------------------
   // -------------------------------------------------------------------------------------------------------------------
-  override def toSet[B >: String]: Set[B] = (names map {_._2}).toSet
-
-  override def iterator(): Iterator[String] = toSet.iterator
-
-  /** Returns a `Map` that associates a name to its unique database identifier. */
-  protected def names(): Map[Int, String] = {
-    storage.query("select id, name from %s".format(table)) {r =>
-      val l = Map.newBuilder[Int, String]
-      while(r.next())
-        l += (r.getInt(1) -> r.getString(2))
-      l.result
-    }
-  }
+  override def iterator(): Iterator[String] = col.find flatMap {_.getAs[String]("_id")}
 }

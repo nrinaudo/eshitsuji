@@ -8,14 +8,11 @@ import org.scalatest.{FunSpec, BeforeAndAfter}
   * @author Nicolas Rinaudo
   */
 class StorageSpec extends FunSpec with BeforeAndAfter with ShouldMatchers {
-  var storage: Storage = _
+  val storage: Storage = StorageSpec.testInstance()
 
+  // Makes sure we have a 'clean' instance of Storage before each test.
   before {
-    storage = Storage.memory()
-  }
-
-  after {
-    storage.close
+    storage.keys foreach {storage -= _}
   }
 
   describe("a storage") {
@@ -45,4 +42,8 @@ class StorageSpec extends FunSpec with BeforeAndAfter with ShouldMatchers {
       storage("key") should be (Some("newValue"))
     }
   }
+}
+
+object StorageSpec {
+  def testInstance() = Storage(db = "eShitsujiTests")
 }
