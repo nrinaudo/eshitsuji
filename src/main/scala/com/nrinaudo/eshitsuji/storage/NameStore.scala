@@ -2,26 +2,32 @@ package com.nrinaudo.eshitsuji.storage
 
 import com.mongodb.casbah.Imports._
 
-/** Used to store names and associated values.
+/** Acts as a `Set` of names backed by a MongoDB collection.
   *
-  * @param  storage where to store names and their associated values.
-  * @param  name    name of the collection in which names and their associated values will be stored.
-  * @author         Nicolas Rinaudo
+  * The purpose of this class is to keep a list of values associated with a given name. It's meant to act as a cache
+  * for implementations such as the Amazon bookstore monitor, who regularly look up new books for a known set of
+  * authors.
+  *
+  * @author Nicolas Rinaudo
   */
-class NameStore(storage: Storage, name: String) extends Iterable[String] {
-  /** MongoDB collection in which all names and associations are stored. */
-  private val col = storage.collection(name)
-
-
-
-  // - Name list maintenance -------------------------------------------------------------------------------------------
+class NameStore(private val col: MongoCollection) extends collection.mutable.Set[String] {
+  // - Set implementation ----------------------------------------------------------------------------------------------
   // -------------------------------------------------------------------------------------------------------------------
-  /** Adds the specified name to the store.
-    *
-    * @param  name name to add to the store (will be stored lower-cased)
-    * @return      `true` if `name` was added to the store, `false` if it was already present.
-    */
-  def add(name: String): Boolean = {
+  def contains(key: String) = col.count("_id" $eq key.toLowerCase) == 1
+
+  def iterator = col.find flatMap {_.getAs[String]("_id")}
+
+  def +=(elem: String) = {
+    add(elem)
+    this
+  }
+
+  def -=(elem: String) = {
+    remove(elem)
+    this
+  }
+
+  override def add(name: String): Boolean = {
     try {
       col.insert(MongoDBObject("_id" -> name.toLowerCase, "val" -> MongoDBList()))
       true
@@ -31,32 +37,7 @@ class NameStore(storage: Storage, name: String) extends Iterable[String] {
     }
   }
 
-  /** Removes the specified name from the store.
-    *
-    * @param  name name to remove from the store.
-    * @return      `true` if the name was removed from the store, `false` if it wasn't found.
-    */
-  def remove(name: String): Boolean = col.remove("_id" $eq name.toLowerCase).getN > 0
-
-  /** Adds the specified name to the store.
-    *
-    * @param  name name to add to the store.
-    * @return      the store itself.
-    */
-  def +=(name: String): NameStore = {
-    add(name)
-    this
-  }
-
-  /** Removes the specified name from the store.
-    *
-    * @param  name name to remove the store.
-    * @return      the store itself.
-    */
-  def -=(name: String): NameStore = {
-    remove(name)
-    this
-  }
+  override def remove(name: String): Boolean = col.remove("_id" $eq name.toLowerCase).getN > 0
 
 
 
@@ -73,10 +54,4 @@ class NameStore(storage: Storage, name: String) extends Iterable[String] {
 
     col.update(("_id" $eq name.toLowerCase) ++ ("val" $nin MongoDBList(v)), $push("val" -> v)).getN > 0
   }
-
-
-
-  // - Iterable implementation -----------------------------------------------------------------------------------------
-  // -------------------------------------------------------------------------------------------------------------------
-  override def iterator(): Iterator[String] = col.find flatMap {_.getAs[String]("_id")}
 }

@@ -5,7 +5,7 @@ import com.nrinaudo.eshitsuji.apple.IApp
 import scala.actors.Actor
 import scala.actors.Actor._
 
-/** Simple notifier that will print eshitsuji events to stdout.
+/** Simple notifier that will print e-Shitsuji events to stdout.
   *
   * @author Nicolas Rinaudo
   */

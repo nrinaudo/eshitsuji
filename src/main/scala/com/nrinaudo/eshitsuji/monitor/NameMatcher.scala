@@ -6,7 +6,7 @@ import scala.actors.Actor._
 
 /** Actor used to interact with a `NameStore` through asynchronous messages.
   *
-  * Within the context of this class, a name is considered to be a regex - only names that match it will be accepted
+  * Within the context of this class, a name is considered to be a regex - only values that match it will be accepted
   * in associations.
   *
   * @param  store store with which to interract.
@@ -35,6 +35,9 @@ class NameMatcher(private val store: NameStore) extends Actor {
           names find {item => item._2.matcher(name).matches} foreach {item =>
             if(store.associate(item._1, value)) dest ! msg
           }
+
+        // Someone requested the list of monitored names.
+        case ListNames() => reply {names map {_._1}}
       }
     }
   }
@@ -56,4 +59,7 @@ object NameMatcher {
     * @param msg   message to send to `dest` upon successful association.
     */
   case class Associate(name: String, value: String, dest: Actor, msg: Any)
+
+  /** Message sent to the matcher to request a list of all monitored named. */
+  case class ListNames()
 }

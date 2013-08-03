@@ -8,7 +8,7 @@ import org.scalatest.{FunSpec, BeforeAndAfter}
   * @author Nicolas Rinaudo
   */
 class NameStoreSpec extends FunSpec with ShouldMatchers with BeforeAndAfter {
-  val store: NameStore = new NameStore(StorageSpec.testInstance(), "NameStoreSpec")
+  val store: NameStore = StorageSpec.testInstance().nameStore("NameStoreSpec")
 
   before {
     store foreach {store -= _}

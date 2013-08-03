@@ -2,45 +2,16 @@ package com.nrinaudo.eshitsuji.storage
 
 import com.mongodb.casbah.Imports._
 
-/** Used to persist configuration values and connector specific information in an SQLite database.
-  *
-  * @author Nicolas Rinaudo
-  */
-class Storage private (private val db: MongoDB) {
+class Storage private (private val db: MongoDB, confName: String = Storage.Configuration) {
   import Storage._
 
-  private val conf = db(Configuration)
+  val conf = new Configuration(collection(confName))
 
+  /** Returns a new instance of `NameStore` stored in the specified collection. */
+  def nameStore(name: String) = new NameStore(collection(name))
 
+  /** Returns the MongoDB collection with the specified name. */
   def collection(name: String): MongoCollection = db(name)
-
-
-  // - Configuration values --------------------------------------------------------------------------------------------
-  // -------------------------------------------------------------------------------------------------------------------
-  /** Retrieves the requested configuration value.
-    *
-    * @throws NoSuchElementException if the requested configuration value does not exist.
-    */
-  def get(k: String): String = apply(k).getOrElse {
-    throw new NoSuchElementException("Missing %s configuration key".format(k))
-  }
-
-  /** Retrieves the requested configuration option. */
-  def apply(k: String): Option[String] = {
-    conf.findOneByID(k) flatMap {_.getAs[String]("value")}
-  }
-
-  /** Sets the specified configuration key to the specified value, overriding any previous value. */
-  def update(k: String, v: String) {
-    conf.save(MongoDBObject("_id" -> k, "value" -> v))
-  }
-
-  /** Removes the specified key. */
-  def -=(k: String) {
-    conf.remove("_id" $eq k)
-  }
-
-  def keys(): Iterator[String] = conf.find() flatMap {_.getAs[String]("_id")}
 }
 
 
