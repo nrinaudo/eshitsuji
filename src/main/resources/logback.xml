@@ -22,8 +22,8 @@
 
     <!-- = Loggers ================================================================================================= -->
     <!-- =========================================================================================================== -->
-    <!-- Disables Classmatic client logs.                                                                            -->
-    <logger name="com.nrinaudo.eshitsuji" level="INFO" additivity="false"/>
+    <!-- e-Shitsuji logs defaults to INFO.                                                                           -->
+    <logger name="com.nrinaudo.eshitsuji" level="INFO"/>
 
     <!-- Default logs: we're only interested in errors.                                                              -->
     <root level="ERROR">

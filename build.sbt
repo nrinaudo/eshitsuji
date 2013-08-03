@@ -41,6 +41,8 @@ org.scalastyle.sbt.PluginKeys.config <<= baseDirectory {_ / "project" / "scalast
 
 // - Dependencies ------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
+libraryDependencies += "org.clapper"      %% "grizzled-slf4j"      % "0.6.10"
+
 libraryDependencies += "nekohtml"         %  "nekohtml"            % "1.9.6.2"
 
 libraryDependencies += "org.mongodb"      %% "casbah"              % "2.6.2"
