@@ -13,8 +13,8 @@ class StdoutNotifier extends Actor {
   def act() {
     loop {
       react {
-        case book: Book => println("New book: %s".format(book))
-        case app:  IApp  => println("New app: %s".format(app))
+        case book: Book => println("New book: %s" format book)
+        case app:  IApp => println("New app: %s" format app)
       }
     }
   }
