@@ -92,16 +92,20 @@ class AdminPlan(storage: Storage) extends Plan {
 
         // Only the administration user is allowed to create new users.
         case PUT(_) => usr match {
-          case Authentifier.AdminUser => auth.add(name, Body.string(req)); Accepted
+          case Authentifier.AdminUser =>
+            if(auth.add(name, Body.string(req))) Ok
+            else                                 Conflict
           case _                      => Unauthorized
         }
 
         // Only the administration account can close another one.
         // The adminstration account itself cannot be destroyed.
         case DELETE(_) => usr match {
-          case Authentifier.AdminUser if name != usr => auth -= name; Accepted
-          case Authentifier.AdminUser                 => BadRequest
-          case _                                      => Unauthorized
+          case Authentifier.AdminUser if name != usr =>
+            if(auth.remove(name)) Ok
+            else                  NotFound
+          case Authentifier.AdminUser                => BadRequest
+          case _                                     => Unauthorized
         }
         case _         => MethodNotAllowed
       }

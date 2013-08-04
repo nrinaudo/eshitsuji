@@ -85,7 +85,10 @@ class Authentifier(storage: Storage) extends Iterable[String] {
     col.update("_id" $eq user, asMongo(user, pass)).getN > 0
 
   /** Deletes the specified user. */
-  def -=(user: String): Boolean = col.remove("_id" $eq user).getN > 0
+  def -=(user: String): Authentifier = {remove(user); this}
+
+  /** Deletes the specified user. */
+  def remove(user: String): Boolean = col.remove("_id" $eq user).getN > 0
 }
 
 

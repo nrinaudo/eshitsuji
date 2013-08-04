@@ -46,13 +46,17 @@ class AuthentifierSpec extends FunSpec with BeforeAndAfter with ShouldMatchers {
 
       auth.accept("nrinaudo", "zorglub") should be(true)
 
-      auth -= "nrinaudo"
+      auth.remove("nrinaudo") should be(true)
 
       auth.accept("nrinaudo", "zorglub") should be(false)
     }
 
     it("Refuses to change a non-existing user's password") {
       (auth("nrinaudo") = "zorglub") should be(false)
+    }
+
+    it("Refuses to remove a non-existing user") {
+      auth.remove("nrinaudo") should be(false)
     }
 
     it("Refuses to create an already existing user") {
