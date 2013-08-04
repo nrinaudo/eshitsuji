@@ -9,6 +9,7 @@ import org.scribe.model._
 import org.scribe.oauth._
 import scala.actors.Actor
 import scala.actors.Actor._
+import grizzled.slf4j.Logging
 
 /** Listens to e-Shitsuji events and tweets them.
   *
@@ -19,12 +20,19 @@ import scala.actors.Actor._
   * @param  token   twitter authentification.
   * @author         Nicolas Rinaudo
   */
-class TwitterNotifier(private val service: OAuthService, private val token: Token) extends Actor {
+class TwitterNotifier(private val service: OAuthService, private val token: Token) extends Actor with Logging {
+  info("Twitter notification enabled.")
+
   def act() {
     loop {
       react {
-        case book: Book => notify("New book by %s: %s" format(book.author, book.uri))
-        case app:  IApp => notify("New app by %s: %s" format(app.publisher, app.uri))
+        case book: Book =>
+          debug("Received book %s" format book)
+          notify("New book by %s: %s" format(book.author, book.uri))
+
+        case app: IApp =>
+          debug("Received iapp %s" format app)
+          notify("New app by %s: %s" format(app.publisher, app.uri))
       }
     }
   }

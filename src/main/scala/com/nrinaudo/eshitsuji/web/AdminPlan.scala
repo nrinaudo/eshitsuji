@@ -7,12 +7,13 @@ import unfiltered.filter._, Plan._
 import unfiltered.response._
 import argonaut._, Argonaut._, integrate.unfiltered.JsonResponse
 
-class AdminPlan(storage: Storage) extends Plan {
+class AdminPlan(storage: Storage) extends Plan with grizzled.slf4j.Logging {
   private val conf     = storage.conf
   private val monitors = collection.mutable.HashMap[String, NameMonitor]()
   private val auth     = new Authentifier(storage)
 
   def register(name: String, monitor: NameMonitor) {
+    debug("Registering %s as monitor" format name)
     monitors += (name -> monitor)
   }
 

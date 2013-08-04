@@ -18,12 +18,11 @@ object Launcher extends App with grizzled.slf4j.Logging {
   plan.register("amazon", authors)
   plan.register("apple",  publishers)
 
+  info("Starting monitors...")
   notifier.start()
   authors.start()
   publishers.start()
 
   info("Starting web service...")
   unfiltered.jetty.Http.local(8080).filter(plan).run()
-
-  info("Startup sequence complete.")
 }

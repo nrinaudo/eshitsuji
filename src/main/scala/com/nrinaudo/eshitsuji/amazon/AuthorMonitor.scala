@@ -14,10 +14,10 @@ import scala.actors.Actor._
   * @author          Nicolas Rinaudo
   */
 class AuthorMonitor(db: Storage, notifier: Actor)
-    extends NameMonitor(new NameMatcher(db.nameStore("Amazon")), notifier) {
-
+    extends NameMonitor(new NameMatcher(db.nameStore("Amazon")), notifier) with grizzled.slf4j.Logging {
   val refreshRate = db.conf.get(AuthorMonitor.RefreshRateKey) map {_.toInt} getOrElse AuthorMonitor.DefaultRefreshRate
 
+  info("Amazon configured to be refreshed every %,d seconds" format refreshRate)
 
   // - Actor implementation --------------------------------------------------------------------------------------------
   // -------------------------------------------------------------------------------------------------------------------
