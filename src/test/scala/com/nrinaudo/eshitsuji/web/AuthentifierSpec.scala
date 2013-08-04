@@ -23,14 +23,14 @@ class AuthentifierSpec extends FunSpec with BeforeAndAfter with ShouldMatchers {
     }
 
     it("Creates new users and accepts their password") {
-      auth("nrinaudo") = "zorglub"
+      auth.add("nrinaudo", "zorglub")
 
       auth.accept("nrinaudo", "zorglub") should be(true)
       auth.accept("nrinaudo", "bulgroz") should be(false)
     }
 
     it("Updates existing users' password, and accept the new password") {
-      auth("nrinaudo") = "zorglub"
+      auth.add("nrinaudo", "zorglub")
 
       auth.accept("nrinaudo", "zorglub") should be(true)
       auth.accept("nrinaudo", "bulgroz") should be(false)
@@ -42,13 +42,22 @@ class AuthentifierSpec extends FunSpec with BeforeAndAfter with ShouldMatchers {
     }
 
     it("Refuses a user's password after it has been deleted") {
-      auth("nrinaudo") = "zorglub"
+      auth.add("nrinaudo", "zorglub")
 
       auth.accept("nrinaudo", "zorglub") should be(true)
 
       auth -= "nrinaudo"
 
       auth.accept("nrinaudo", "zorglub") should be(false)
+    }
+
+    it("Refuses to change a non-existing user's password") {
+      (auth("nrinaudo") = "zorglub") should be(false)
+    }
+
+    it("Refuses to create an already existing user") {
+      auth.add("nrinaudo", "zorglub") should be(true)
+      auth.add("nrinaudo", "bulgroz") should be(false)
     }
   }
 }

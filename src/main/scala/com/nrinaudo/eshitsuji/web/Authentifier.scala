@@ -51,6 +51,8 @@ class Authentifier(storage: Storage) extends Iterable[String] {
 
   // - User handling ---------------------------------------------------------------------------------------------------
   // -------------------------------------------------------------------------------------------------------------------
+  def contains(user: String) = col.count("_id" $eq user) == 1
+
   /** Checks whether the specified user / password is valid. */
   def accept(user: String, pass: String): Boolean = {
     col.findOneByID(user) flatMap {obj =>
@@ -62,26 +64,28 @@ class Authentifier(storage: Storage) extends Iterable[String] {
     } getOrElse false
   }
 
-  /** Creates or updates the specified user. */
-  def update(user: String, pass: String) {
+  private def asMongo(user: String, pass: String) = {
     val salt = randomSalt
-    col.save(MongoDBObject("_id" -> user, "salt" -> encode(salt), "pwd" -> hashPassword(salt, pass)))
+    MongoDBObject("_id" -> user, "salt" -> encode(salt), "pwd" -> hashPassword(salt, pass))
   }
+
+  /** Creates the specified user. */
+  def add(user: String, pass: String): Boolean = {
+    try {
+      col.insert(asMongo(user, pass))
+      true
+    }
+    catch {
+      case _: com.mongodb.MongoException.DuplicateKey => false
+    }
+  }
+
+  /** Updates the specified user. */
+  def update(user: String, pass: String): Boolean =
+    col.update("_id" $eq user, asMongo(user, pass)).getN > 0
 
   /** Deletes the specified user. */
   def -=(user: String): Boolean = col.remove("_id" $eq user).getN > 0
-
-
-
-  // - Unfiltered kit --------------------------------------------------------------------------------------------------
-  // -------------------------------------------------------------------------------------------------------------------
-  def apply[A, B](intent: Cycle.Intent[A, B]) = Cycle.Intent[A,B] {
-    // We have acceptable tokens.
-    case req @ BasicAuth(user, pass) if(accept(user, pass)) => Cycle.Intent.complete(intent)(req)
-
-    // No access token, or not acceptable.
-    case _  => Unauthorized ~> WWWAuthenticate("""Basic realm="/"""")
-  }
 }
 
 
