@@ -48,7 +48,8 @@ class AdminPlan(storage: Storage, password: String) extends Plan with grizzled.s
 
   // - Intent ----------------------------------------------------------------------------------------------------------
   // -------------------------------------------------------------------------------------------------------------------
-  def intent = Authentifier(password) {
+  def intent = unfiltered.kit.GZip {
+    Authentifier(password) {
       // Configuration: /conf/{name}
       case req @ Path(Seg("conf" :: name :: Nil)) => req match {
         case GET(_)    => conf.get(name) match {
@@ -94,5 +95,6 @@ class AdminPlan(storage: Storage, password: String) extends Plan with grizzled.s
         // The requested monitor does not exist.
         case None => NotFound
       }
+    }
   }
 }
