@@ -16,8 +16,13 @@ class Storage private (private val db: MongoDB, confName: String = Storage.Confi
 
 
 /** Used to create instances of `Storage`. */
-object Storage {
+object Storage extends grizzled.slf4j.Logging {
   def Configuration = "Configuration"
+  def DefaultUri    = "mongodb://localhost:27017"
+  def DefaultDb     = "eShitsuji"
 
-  def apply(host: String = "localhost", post: Int = 27017, db: String = "eShitsuji"): Storage = new Storage(MongoClient(host, post)(db))
+  def apply(uri: String = DefaultUri, db: String = DefaultDb): Storage = {
+    info("Connecting to MongoDB database %s on url %s..." format(db, uri))
+    new Storage(MongoClient(MongoClientURI(uri))(db))
+  }
 }

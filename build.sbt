@@ -63,7 +63,7 @@ libraryDependencies += "io.argonaut"      %% "argonaut-unfiltered" % "6.0-RC3"
 
 libraryDependencies += "org.scribe"       %  "scribe"              % "1.3.3"
 
-libraryDependencies += "com.github.scopt" %% "scopt"               % "2.1.0"
+libraryDependencies += "com.github.scopt" %% "scopt"               % "3.1.0"
 
 libraryDependencies += "org.scalatest"    %% "scalatest"           % "1.9.1" % "test"
 
