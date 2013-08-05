@@ -23,7 +23,7 @@
     <!-- = Loggers ================================================================================================= -->
     <!-- =========================================================================================================== -->
     <!-- e-Shitsuji logs defaults to INFO.                                                                           -->
-    <logger name="com.nrinaudo.eshitsuji" level="INFO"/>
+    <logger name="com.nrinaudo.eshitsuji" level="DEBUG"/>
 
     <!-- Default logs: we're only interested in errors.                                                              -->
     <root level="ERROR">

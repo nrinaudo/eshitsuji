@@ -37,6 +37,8 @@ org.scalastyle.sbt.ScalastylePlugin.Settings
 
 org.scalastyle.sbt.PluginKeys.config <<= baseDirectory {_ / "project" / "scalastyle-config.xml"}
 
+seq(com.typesafe.startscript.StartScriptPlugin.startScriptForClassesSettings: _*)
+
 
 
 // - Dependencies ------------------------------------------------------------------------------------------------------

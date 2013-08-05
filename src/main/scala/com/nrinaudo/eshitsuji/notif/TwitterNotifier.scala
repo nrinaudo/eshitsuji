@@ -14,7 +14,7 @@ import grizzled.slf4j.Logging
 /** Listens to e-Shitsuji events and tweets them.
   *
   * The companion object offers methods for retrieving Twitter configuration through instances of
-  * [[com.nrinaudo.eshitsuji.storage.Storage]].
+  * [[com.nrinaudo.eshitsuji.storage.Configuration]].
   *
   * @param  service how to connect to twitter.
   * @param  token   twitter authentification.
@@ -42,6 +42,8 @@ class TwitterNotifier(private val service: OAuthService, private val token: Toke
     val request = new OAuthRequest(Verb.POST, "https://api.twitter.com/1.1/statuses/update.json")
     request.addBodyParameter("status", msg)
     service.signRequest(token, request)
+
+    // TODO: we might consider logging errors here.
     request.send()
   }
 }
