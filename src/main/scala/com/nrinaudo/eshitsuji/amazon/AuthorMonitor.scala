@@ -14,7 +14,9 @@ import scala.actors.Actor._
   * @author          Nicolas Rinaudo
   */
 class AuthorMonitor(db: Storage, notifier: Actor)
-    extends NameMonitor(new NameMatcher(db.nameStore("Amazon")), notifier) with grizzled.slf4j.Logging {
+    extends NameMonitor(new NameMatcher(db.nameStore("Amazon"), AuthorMonitor.CacheTtl), notifier)
+    with grizzled.slf4j.Logging {
+
   val refreshRate = db.conf.get(AuthorMonitor.RefreshRateKey) map {_.toInt} getOrElse AuthorMonitor.DefaultRefreshRate
 
   info("Amazon configured to be refreshed every %,d seconds" format refreshRate)
@@ -42,4 +44,6 @@ object AuthorMonitor {
   val RefreshRateKey     = "amazon.refresh"
   /** Default number of seconds between two refreshes. */
   val DefaultRefreshRate = 60 * 60
+  /** Number of milliseconds a cached association is allowed to live (15 days). */
+  val CacheTtl = 1296000000l
 }

@@ -47,11 +47,17 @@ class NameStore(private val col: MongoCollection) extends collection.mutable.Set
     *
     * @param  name  name with which to associate `value`.
     * @param  value value to associate with `name`.
+    * @param  date  date at which the association is created. Defaults to now.
     * @return       `true` if the association is new, `false` otherwise.
     */
-  def associate(name: String, value: String): Boolean = {
+  def associate(name: String, value: String, date: java.util.Date = new java.util.Date()): Boolean = {
     val v = value.toLowerCase
+    val o = MongoDBObject("name" -> v, "date" -> date)
 
-    col.update(("_id" $eq name.toLowerCase) ++ ("val" $nin MongoDBList(v)), $push("val" -> v)).getN > 0
+    col.update(("_id" $eq name.toLowerCase) ++ ("val.name" $nin MongoDBList(v)), $push("val" -> o)).getN > 0
+  }
+
+  def cleanOlderThan(date: java.util.Date) {
+    col.update(MongoDBObject(), $pull("val" -> ("date" $lte date)), multi = true)
   }
 }

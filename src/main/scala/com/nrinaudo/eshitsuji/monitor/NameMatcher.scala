@@ -10,9 +10,10 @@ import scala.actors.Actor._
   * in associations.
   *
   * @param  store store with which to interract.
+  * @param  ttl   number of milliseconds an association is allowed to live (ignored if set to -1).
   * @author       Nicolas Rinaudo
   */
-class NameMatcher(private val store: NameStore) extends Actor {
+class NameMatcher(private val store: NameStore, val ttl: Long = -1l) extends Actor {
   import NameMatcher._
 
   /** Returns an association between the specified name and the corresponding pattern. */
@@ -33,7 +34,10 @@ class NameMatcher(private val store: NameStore) extends Actor {
         // A new association is attempted.
         case Associate(name, value, dest, msg) =>
           names find {item => item._2.matcher(name).matches} foreach {item =>
-            if(store.associate(item._1, value)) dest ! msg
+            if(store.associate(item._1, value)) {
+              if(ttl != -1) store.cleanOlderThan(new java.util.Date(System.currentTimeMillis - ttl))
+              dest ! msg
+            }
           }
 
         // Someone requested the list of monitored names.

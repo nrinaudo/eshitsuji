@@ -74,5 +74,23 @@ class NameStoreSpec extends FunSpec with ShouldMatchers with BeforeAndAfter {
       store.associate("nicolas", "rinaudo") should be(true)
       store.associate("nicolas", "rinaudo") should be(false)
     }
+
+    it("cleans old associations when requested") {
+      import java.util.Date
+
+      store.add("nicolas") should be(true)
+
+      // Associates an "old" vaue.
+      store.associate("nicolas", "nrinaudo", new Date(new Date().getTime - 1000)) should be(true)
+
+      // New associations of the same value should not be possible.
+      store.associate("nicolas", "nrinaudo") should be(false)
+
+      // Cleans old dates.
+      store.cleanOlderThan(new Date())
+
+      // New associations should be possible again.
+      store.associate("nicolas", "nrinaudo") should be(true)
+    }
   }
 }

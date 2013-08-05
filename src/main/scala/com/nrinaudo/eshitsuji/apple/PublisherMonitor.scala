@@ -8,7 +8,8 @@ import scala.actors._
 import java.util.Locale
 
 class PublisherMonitor(locale: Locale, db: Storage, notifier: Actor)
-    extends NameMonitor(new NameMatcher(db.nameStore("AppStore")), notifier) with grizzled.slf4j.Logging {
+    extends NameMonitor(new NameMatcher(db.nameStore("AppStore"), PublisherMonitor.CacheTtl), notifier)
+    with grizzled.slf4j.Logging {
 
   private val uri = "https://itunes.apple.com/%s/rss/newapplications/limit=300/xml".format(locale.getCountry.toLowerCase)
 
@@ -28,4 +29,6 @@ class PublisherMonitor(locale: Locale, db: Storage, notifier: Actor)
 object PublisherMonitor {
   val RefreshRateKey = "apple.refresh"
   val DefaultRefreshRate = 60 * 60
+  /** Number of milliseconds a cached association is allowed to live (7 days). */
+  val CacheTtl = 604800000l
 }
