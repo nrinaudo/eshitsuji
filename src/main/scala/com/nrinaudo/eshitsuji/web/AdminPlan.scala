@@ -7,10 +7,9 @@ import unfiltered.filter._, Plan._
 import unfiltered.response._
 import argonaut._, Argonaut._, integrate.unfiltered.JsonResponse
 
-class AdminPlan(storage: Storage) extends Plan with grizzled.slf4j.Logging {
+class AdminPlan(storage: Storage, password: String) extends Plan with grizzled.slf4j.Logging {
   private val conf     = storage.conf
   private val monitors = collection.mutable.HashMap[String, NameMonitor]()
-  private val auth     = new Authentifier(storage)
 
   def register(name: String, monitor: NameMonitor) {
     debug("Registering %s as monitor" format name)
@@ -40,16 +39,6 @@ class AdminPlan(storage: Storage) extends Plan with grizzled.slf4j.Logging {
     ("name" := name) ->:
     ("uri"  := "/monitors/%s/%s" format(monitor, name)) ->: jEmptyObject
 
-  /** Returns a JSON Object listing all available users. */
-  private def userList() =
-    ("values" := jArray(auth map {u => user(u)} toList)) ->:
-    ("uri"    := "/users") ->: jEmptyObject
-
-  /** Returns a JSON object describing the specified user. */
-  private def user(name: String) =
-    ("name" := name) ->:
-    ("uri"  := "/users/%s" format name) ->: jEmptyObject
-
   /** Returns a JSON object decribing the specified configuration variable. */
   private def variable(name: String, value: String) =
     ("name"  := name) ->:
@@ -59,8 +48,7 @@ class AdminPlan(storage: Storage) extends Plan with grizzled.slf4j.Logging {
 
   // - Intent ----------------------------------------------------------------------------------------------------------
   // -------------------------------------------------------------------------------------------------------------------
-  def intent = {
-    case req @ BasicAuth(usr, pass) if(auth.accept(usr, pass)) => req match {
+  def intent = Authentifier(password) {
       // Configuration: /conf/{name}
       case req @ Path(Seg("conf" :: name :: Nil)) => req match {
         case GET(_)    => conf.get(name) match {
@@ -71,46 +59,6 @@ class AdminPlan(storage: Storage) extends Plan with grizzled.slf4j.Logging {
         case DELETE(_) => conf -= name; Accepted
         case _         => MethodNotAllowed
       }
-
-      // User list: /users
-      case req @ Path(Seg("users" :: Nil)) => req match {
-        case GET(_)    => userList()
-        case _         => MethodNotAllowed
-      }
-
-      // User: /users/{name}
-      case req @ Path(Seg("users" :: name :: Nil)) => req match {
-        case GET(_)    =>
-          if(auth.contains(name)) user(name)
-          else                    NotFound
-
-        // Only admin or the current user is allowed to change a password
-        case POST(_)    => usr match {
-          case Authentifier.AdminUser => auth(name) = Body.string(req); Accepted
-          case n if n == name         => auth(name) = Body.string(req); Accepted
-          case _                      => Unauthorized
-        }
-
-        // Only the administration user is allowed to create new users.
-        case PUT(_) => usr match {
-          case Authentifier.AdminUser =>
-            if(auth.add(name, Body.string(req))) Ok
-            else                                 Conflict
-          case _                      => Unauthorized
-        }
-
-        // Only the administration account can close another one.
-        // The adminstration account itself cannot be destroyed.
-        case DELETE(_) => usr match {
-          case Authentifier.AdminUser if name != usr =>
-            if(auth.remove(name)) Ok
-            else                  NotFound
-          case Authentifier.AdminUser                => BadRequest
-          case _                                     => Unauthorized
-        }
-        case _         => MethodNotAllowed
-      }
-
 
       // Exit: /admin/exit
       case req @ Path(Seg("admin" :: "exit" :: Nil)) => req match {
@@ -146,8 +94,5 @@ class AdminPlan(storage: Storage) extends Plan with grizzled.slf4j.Logging {
         // The requested monitor does not exist.
         case None => NotFound
       }
-    }
-
-    case _  => Unauthorized ~> WWWAuthenticate("""Basic realm="/"""")
   }
 }
