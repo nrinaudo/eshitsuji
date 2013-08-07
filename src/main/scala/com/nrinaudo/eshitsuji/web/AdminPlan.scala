@@ -7,9 +7,10 @@ import unfiltered.filter._, Plan._
 import unfiltered.response._
 import argonaut._, Argonaut._, integrate.unfiltered.JsonResponse
 
-class AdminPlan(storage: Storage, password: String) extends Plan with grizzled.slf4j.Logging {
+class AdminPlan(storage: Storage) extends Plan with grizzled.slf4j.Logging {
   private val conf     = storage.conf
   private val monitors = collection.mutable.HashMap[String, NameMonitor]()
+  private val auth     = new Authentifier(conf)
 
   def register(name: String, monitor: NameMonitor) {
     debug("Registering %s as monitor" format name)
@@ -20,6 +21,9 @@ class AdminPlan(storage: Storage, password: String) extends Plan with grizzled.s
 
   // - JSON serialization ----------------------------------------------------------------------------------------------
   // -------------------------------------------------------------------------------------------------------------------
+  import scala.language.implicitConversions
+  import scala.language.postfixOps
+
   /** Used to implicitely transform JSON objects to JSON responses. */
   private implicit def toJsonResponse(obj: Json): ResponseFunction[Any] = JsonResponse(obj, PrettyParams.spaces4)
 
@@ -49,7 +53,7 @@ class AdminPlan(storage: Storage, password: String) extends Plan with grizzled.s
   // - Intent ----------------------------------------------------------------------------------------------------------
   // -------------------------------------------------------------------------------------------------------------------
   def intent = unfiltered.kit.GZip {
-    Authentifier(password) {
+    auth {
       // Configuration: /conf/{name}
       case req @ Path(Seg("conf" :: name :: Nil)) => req match {
         case GET(_)    => conf.get(name) match {
@@ -59,6 +63,11 @@ class AdminPlan(storage: Storage, password: String) extends Plan with grizzled.s
         case PUT(_)    => conf(name) = Body.string(req); Accepted
         case DELETE(_) => conf -= name; Accepted
         case _         => MethodNotAllowed
+      }
+
+      case req @ Path(Seg("admin" :: "pwd" :: Nil)) => req match {
+        case PUT(_) => auth.setPassword(Body.string(req)); Ok
+        case _      => MethodNotAllowed
       }
 
       // Exit: /admin/exit
@@ -74,7 +83,7 @@ class AdminPlan(storage: Storage, password: String) extends Plan with grizzled.s
       }
 
       // One monitor: /monitors/{name}
-      case req @ Path(Seg("monitors" :: name :: rest)) => monitors.get(name) match {
+      case req @ Path(Seg("monitors" :: Decode.utf8(name) :: rest)) => monitors.get(name) match {
         // We have a monitor that matches the specified name.
         case Some(m) => rest match {
           // Resource: /monitors/{name}
@@ -84,7 +93,7 @@ class AdminPlan(storage: Storage, password: String) extends Plan with grizzled.s
           }
 
           // Specific author: /monitors/{name}/{id}
-          case id :: Nil => req match {
+          case Decode.utf8(id) :: Nil => req match {
             case GET(_)    => author(id, name)
             case PUT(_)    => m += id; Accepted
             case DELETE(_) => m -= id; Accepted

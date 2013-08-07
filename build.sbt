@@ -4,7 +4,7 @@ name := "eShitsuji"
 
 version := "1.0"
 
-scalaVersion := "2.9.2"
+scalaVersion := "2.10.2"
 
 
 
@@ -14,6 +14,8 @@ scalaVersion := "2.9.2"
 scalacOptions += "-deprecation"
 
 scalacOptions += "-unchecked"
+
+scalacOptions += "-feature"
 
 javaOptions := Seq("-Djava.awt.headless=true")
 
@@ -43,7 +45,9 @@ seq(com.typesafe.startscript.StartScriptPlugin.startScriptForClassesSettings: _*
 
 // - Dependencies ------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------
-libraryDependencies += "org.clapper"      %% "grizzled-slf4j"      % "0.6.10"
+libraryDependencies += "org.scala-lang"   % "scala-actors"         % "2.10.2"
+
+libraryDependencies += "org.clapper"      %% "grizzled-slf4j"      % "1.0.1"
 
 libraryDependencies += "nekohtml"         %  "nekohtml"            % "1.9.6.2"
 

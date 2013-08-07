@@ -47,7 +47,7 @@ object Book {
 
   // - Download helpers ------------------------------------------------------------------------------------------------
   // -------------------------------------------------------------------------------------------------------------------
-  /** DOwnloads the content of the specified URI. */
+  /** Downloads the content of the specified URI. */
   private def download(uri: String) = XML.withSAXParser(new HtmlParser()).load(new java.net.URL(uri))
 
 
