@@ -18,11 +18,26 @@ class Storage private (private val db: MongoDB, confName: String = Storage.Confi
 /** Used to create instances of `Storage`. */
 object Storage extends grizzled.slf4j.Logging {
   def Configuration = "Configuration"
-  def DefaultUri    = "mongodb://localhost:27017"
   def DefaultDb     = "eShitsuji"
+  def DefaultHost   = "mongodb://localhost:27017/"
+  def DefaultUri    = DefaultHost + DefaultDb
 
-  def apply(uri: String = DefaultUri, db: String = DefaultDb): Storage = {
-    info("Connecting to MongoDB database %s on url %s..." format(db, uri))
-    new Storage(MongoClient(MongoClientURI(uri))(db))
+  def uri(host: String = DefaultHost, db: String = DefaultDb) = MongoClientURI(host + db)
+
+  def apply(uri: String = DefaultUri): Storage = apply(MongoClientURI(uri))
+
+  def apply(uri: com.mongodb.casbah.MongoClientURI): Storage = {
+    uri.database map {dbName =>
+      info("Connecting to MongoDB database %s..." format dbName)
+
+      val db = MongoClient(uri)(dbName)
+
+      uri.username.map {user =>
+        uri.password.map {password =>
+          db.underlying.authenticate(user, password)
+        }
+      }
+      new Storage(db)
+    } getOrElse {throw new IllegalArgumentException("Missing database name")}
   }
 }

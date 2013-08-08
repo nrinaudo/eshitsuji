@@ -11,5 +11,5 @@ class StorageSpec extends FunSpec with BeforeAndAfter with ShouldMatchers {
 }
 
 object StorageSpec {
-  def testInstance() = Storage(db = "eShitsujiTests")
+  def testInstance() = Storage(Storage.uri(db = "eShitsujiTests"))
 }
