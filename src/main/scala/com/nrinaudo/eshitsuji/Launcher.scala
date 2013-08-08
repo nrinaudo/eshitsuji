@@ -33,6 +33,6 @@ object Launcher extends App with grizzled.slf4j.Logging {
     publishers.start()
 
     info("Starting web service on port %d..." format config.port)
-    unfiltered.jetty.Http.local(config.port).filter(plan).run()
+    unfiltered.jetty.Http(config.port).plan(plan).run()
   }
 }
