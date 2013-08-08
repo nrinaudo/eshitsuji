@@ -43,8 +43,10 @@ class TwitterNotifier(private val service: OAuthService, private val token: Toke
     request.addBodyParameter("status", msg)
     service.signRequest(token, request)
 
-    // TODO: we might consider logging errors here.
-    request.send()
+    try {request.send()}
+    catch {
+      case e: Exception => warn("Failed to send Twitter notification: %s" format e.getMessage, e)
+    }
   }
 }
 
