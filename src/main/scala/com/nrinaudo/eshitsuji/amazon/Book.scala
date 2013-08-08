@@ -36,7 +36,7 @@ class Book(val author: String, val title: String, val date: Date, val uri: Strin
 }
 
 /** Provides tools for crawling subsets of the Amazon store and load all the books they describe. */
-object Book {
+object Book extends grizzled.slf4j.Logging {
   /** Identifier of the Science Fiction / Fantasy category. */
   val ScienceFictionFantasy = 25
 
@@ -48,7 +48,17 @@ object Book {
   // - Download helpers ------------------------------------------------------------------------------------------------
   // -------------------------------------------------------------------------------------------------------------------
   /** Downloads the content of the specified URI. */
-  private def download(uri: String) = XML.withSAXParser(new HtmlParser()).load(new java.net.URL(uri))
+  private def download(uri: String) = {
+    try {
+      debug("Connecting to %s..." format uri)
+      Some(XML.withSAXParser(new HtmlParser()).load(new java.net.URL(uri)))
+    }
+    catch {
+      case e: Exception =>
+        warn("Failed to connect to %s: %s" format(uri, e.getMessage), e)
+        None
+    }
+  }
 
 
 
@@ -93,7 +103,7 @@ object Book {
       _ \ "li" \ "span" exists {_ \ "@class" contains Text("zg_selected")}
     }) \ "ul" \\ "a" map {_ \ "@href"}) foreach {link =>
       actor {
-        load(download(link.text), caller)
+        download(link.text) map {d => load(d, caller)}
       }
     }
   }
@@ -103,7 +113,7 @@ object Book {
     (((html \\ "ol" filter {_ \ "@class" contains Text("zg_pagination")})
       \\ "li" drop (1)) \\ "a" map {_ \ "@href"}) foreach {link =>
       actor {
-        extractBooks(download(link.text), caller)
+        download(link.text) map {d => extractBooks(d, caller)}
       }
     }
   }
@@ -125,7 +135,7 @@ object Book {
     */
   def load(category: Int, caller: Actor) {
     actor {
-      load(download(RootUri + category), caller)
+      download(RootUri + category) map {d => load(d, caller)}
     }
   }
 }

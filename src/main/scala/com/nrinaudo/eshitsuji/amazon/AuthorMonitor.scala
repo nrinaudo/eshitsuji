@@ -27,7 +27,9 @@ class AuthorMonitor(db: Storage, notifier: Actor)
     loop {
       react {
         // Whenever woken up, reloads all books.
-        case Timer.WakeUp => Book.load(Book.ScienceFictionFantasy, this)
+        case Timer.WakeUp =>
+          info("Refreshing authors...")
+          Book.load(Book.ScienceFictionFantasy, this)
 
         // For all new books, makes sure that:
         // - their author is matched by at least one of the registered ones.
