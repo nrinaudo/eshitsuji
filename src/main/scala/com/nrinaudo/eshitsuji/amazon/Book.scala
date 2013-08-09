@@ -86,11 +86,7 @@ object Book extends grizzled.slf4j.Logging {
   private def extractBooks(page: Elem, caller: Actor) =
     (page \\ "div" filter {_ \ "@class" contains Text("zg_itemWrapper")}) foreach {node =>
       try {caller ! nodeToBook(node)}
-      catch {
-        case e: java.text.ParseException =>
-        // Nothing we can do here, except ignore the book.
-        // Log, maybe?
-      }
+      catch {case e: Exception => warn("An error occured while parsing a book node: %s" format e.getMessage, e)}
     }
 
 

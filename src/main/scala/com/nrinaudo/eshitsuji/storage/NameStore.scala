@@ -1,6 +1,7 @@
 package com.nrinaudo.eshitsuji.storage
 
 import com.mongodb.casbah.Imports._
+import scala.util.control.Exception._
 
 /** Acts as a `Set` of names backed by a MongoDB collection.
   *
@@ -17,25 +18,15 @@ class NameStore(private val col: MongoCollection) extends collection.mutable.Set
 
   def iterator = col.find flatMap {_.getAs[String]("_id")}
 
-  def +=(elem: String) = {
-    add(elem)
-    this
-  }
+  def +=(elem: String) = {add(elem); this}
 
-  def -=(elem: String) = {
-    remove(elem)
-    this
-  }
+  def -=(elem: String) = {remove(elem); this}
 
-  override def add(name: String): Boolean = {
-    try {
+  override def add(name: String): Boolean =
+    catching(classOf[com.mongodb.MongoException.DuplicateKey]).withApply {_ => false} {
       col.insert(MongoDBObject("_id" -> name.toLowerCase, "val" -> MongoDBList()))
       true
     }
-    catch {
-      case e: com.mongodb.MongoException.DuplicateKey => false
-    }
-  }
 
   override def remove(name: String): Boolean = col.remove("_id" $eq name.toLowerCase).getN > 0
 

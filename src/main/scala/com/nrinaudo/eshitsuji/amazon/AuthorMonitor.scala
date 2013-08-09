@@ -6,6 +6,7 @@ import com.nrinaudo.eshitsuji.monitor.NameMatcher._
 import com.nrinaudo.eshitsuji._
 import scala.actors._
 import scala.actors.Actor._
+import scala.util.Try
 
 /** Used to monitor authors on [[http://www.amazon.com Amazon]].
   *
@@ -17,7 +18,10 @@ class AuthorMonitor(db: Storage, notifier: Actor)
     extends NameMonitor(new NameMatcher(db.nameStore("Amazon"), AuthorMonitor.CacheTtl), notifier)
     with grizzled.slf4j.Logging {
 
-  val refreshRate = db.conf.get(AuthorMonitor.RefreshRateKey) map {_.toInt} getOrElse AuthorMonitor.DefaultRefreshRate
+  val refreshRate = {
+    for(s <- db.conf.get(AuthorMonitor.RefreshRateKey);
+        i <- Try {s.toInt}.toOption) yield i
+  } getOrElse AuthorMonitor.DefaultRefreshRate
 
   info("Amazon configured to be refreshed every %,d seconds" format refreshRate)
 

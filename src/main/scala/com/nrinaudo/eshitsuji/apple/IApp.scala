@@ -23,8 +23,17 @@ class IApp(val name: String, val publisher: String, val uri: String) extends Equ
 }
 
 /** Used to rerieve [[com.nrinaudo.eshitsuji.apple.IApp]] instances. */
-object IApp {
-  private def download(uri: String) = XML.load(new java.net.URL(uri))
+object IApp extends grizzled.slf4j.Logging {
+  private def download(uri: String) =
+    try {
+      debug("Connecting to %s..." format uri)
+      Some(XML.load(new java.net.URL(uri)))
+    }
+    catch {
+      case e: Exception =>
+        warn("Failed to connect to %s: %s" format(uri, e.getMessage), e)
+        None
+    }
 
   /** Extracts all app declarations found at the specified uri and passes them to the specified callback.
     *
@@ -32,10 +41,11 @@ object IApp {
     * @param callback function to call with each analyse instance of `IApp`.
     */
   def load(uri: String)(callback: IApp => Unit) {
-    download(uri) \\ "entry" foreach {entry =>
+    download(uri) map {x => x \\ "entry" foreach {entry =>
       callback(new IApp((entry \\ "name").text.trim,
-                       (entry \\ "artist").text.trim,
-                       (entry \\ "link" \\ "@href").text.trim))
+        (entry \\ "artist").text.trim,
+        (entry \\ "link" \\ "@href").text.trim))
+    }
     }
   }
 }

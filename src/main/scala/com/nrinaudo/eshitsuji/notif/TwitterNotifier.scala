@@ -40,13 +40,12 @@ class TwitterNotifier(private val service: OAuthService, private val token: Toke
   /** Tweets the specified message. */
   private def notify(msg: String) {
     val request = new OAuthRequest(Verb.POST, "https://api.twitter.com/1.1/statuses/update.json")
+
     request.addBodyParameter("status", msg)
     service.signRequest(token, request)
 
     try {request.send()}
-    catch {
-      case e: Exception => warn("Failed to send Twitter notification: %s" format e.getMessage, e)
-    }
+    catch {case e: Exception => warn("Failed to send Twitter notification: %s" format e.getMessage, e)}
   }
 }
 
@@ -63,17 +62,14 @@ object TwitterNotifier {
   /** Name of the configuration variable that contains the Twitter token secret to use. */
   val TokenSecret   = "twitter.token.secret"
 
-  def apply(conf: Configuration): Option[TwitterNotifier] = service(conf) flatMap {s =>
-    token(conf) map {t => new TwitterNotifier(s, t)}
-  }
+  def apply(conf: Configuration): Option[TwitterNotifier] =
+    for(s <- service(conf); t <- token(conf)) yield new TwitterNotifier(s, t)
 
-  def service(conf: Configuration): Option[OAuthService] = conf.get(ServiceKey) flatMap {key =>
-    conf.get(ServiceSecret) map {secret => service(key, secret)}
-  }
+  def service(conf: Configuration): Option[OAuthService] =
+    for(k <- conf.get(ServiceKey); s <- conf.get(ServiceSecret)) yield service(k, s)
 
-  def token(conf: Configuration): Option[Token] =  conf.get(TokenValue) flatMap {value =>
-    conf.get(TokenSecret) map {secret => token(value, secret)}
-  }
+  def token(conf: Configuration): Option[Token] =
+    for(v <- conf.get(TokenValue); s <- conf.get(TokenSecret)) yield token(v, s)
 
   /** Creates an instance of `Token` for the specified value and secret. */
   def token(token: String, secret: String): Token = new Token(token, secret)

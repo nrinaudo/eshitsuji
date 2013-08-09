@@ -6,6 +6,7 @@ import com.nrinaudo.eshitsuji.monitor._
 import com.nrinaudo.eshitsuji.monitor.NameMatcher._
 import scala.actors._
 import java.util.Locale
+import scala.util.Try
 
 class PublisherMonitor(locale: Locale, db: Storage, notifier: Actor)
     extends NameMonitor(new NameMatcher(db.nameStore("AppStore"), PublisherMonitor.CacheTtl), notifier)
@@ -13,7 +14,10 @@ class PublisherMonitor(locale: Locale, db: Storage, notifier: Actor)
 
   private val uri = "https://itunes.apple.com/%s/rss/newapplications/limit=300/xml".format(locale.getCountry.toLowerCase)
 
-  val refreshRate = db.conf.get(PublisherMonitor.RefreshRateKey) map {_.toInt} getOrElse PublisherMonitor.DefaultRefreshRate
+  val refreshRate = {
+    for(s <- db.conf.get(PublisherMonitor.RefreshRateKey);
+        i <- Try {s.toInt}.toOption) yield i
+  } getOrElse PublisherMonitor.DefaultRefreshRate
 
   info("AppStore configured to be refreshed every %,d seconds" format refreshRate)
 
